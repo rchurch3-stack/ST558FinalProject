@@ -2,7 +2,7 @@
 title: "Modeling"
 author: "Ralph Church"
 format: html
-editor: visual
+editor: visual 
 ---
 
 ## Quarto
