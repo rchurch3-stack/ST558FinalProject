@@ -5,8 +5,53 @@ format: html
 editor: visual
 ---
 
-```         
-## Modeling  
+### Imports
+
+```{r}
+library(readr)
 ```
+
+
+### Reading in the data
+
+```{r}
+library(readr)
+library(dplyr)
+
+water <- read_csv("data/water_potability.csv")
+
+water <- water %>%
+  mutate(Potability = factor(Potability))
+```
+
+### Initial exploration
+
+Let's begin by examining the dimensions and structure of the dataset.
+
+```{r}
+dim(water)
+glimpse(water)
+```
+
+Next, preview the first few observations.
+
+```{r}
+head(water)
+```
+
+Check the amount of missing data in each variable.
+
+```{r}
+colSums(is.na(water))
+```
+
+Finally, examine summary statistics for each variable.
+
+```{r}
+summary(water)
+```
+
+
+### Modeling  
 
 [Click here for the Modeling Page](Modeling.html)
