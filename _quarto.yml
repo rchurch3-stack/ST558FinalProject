@@ -1,7 +1,10 @@
 project:
   type: website
   output-dir: docs
-  render: 
-    - "*.qmd"
+  render:
+    - EDA.qmd
+    - Modeling.qmd
 
-  
+format:
+  html:
+    toc: true
