@@ -2,26 +2,349 @@
 title: "Modeling"
 author: "Ralph Church"
 format: html
-editor: visual 
+editor: visual
 ---
 
-## Quarto
+## Introduction
 
-Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <https://quarto.org>.
+The goal of this analysis is to predict whether a water sample is potable, meaning safe to drink. The response variable is `Potability`, and the predictors are measurements of water quality such as pH, hardness, solids, sulfate, conductivity, and turbidity.
 
-## Running Code
+Two classification methods will be compared:
 
-When you click the **Render** button a document will be generated that includes both content and the output of embedded code. You can embed code like this:
+1. A classification tree
+2. A random forest
+
+The models will be tuned using five-fold cross-validation and log-loss.
+
+## Imports
 
 ```{r}
-1 + 1
+library(tidyverse)
+library(tidymodels)
+library(ranger)
 ```
 
-You can add options to executable code like this
+The `rpart` and `ranger` packages must also be installed because they are used as the model engines:
+
+```r
+install.packages(c("rpart", "ranger"))
+```
+
+Run that installation command once in the R Console, not inside this document.
+
+## Reading and Preparing the Data
 
 ```{r}
-#| echo: false
-2 * 2
+water <- read_csv(
+  "data/water_potability.csv",
+  show_col_types = FALSE
+) |>
+  mutate(
+    Potability = factor(
+      Potability,
+      levels = c(0, 1),
+      labels = c("Not Potable", "Potable")
+    )
+  )
+
+glimpse(water)
 ```
 
-The `echo: false` option disables the printing of code (only output is displayed).
+## Training and Test Sets
+
+The data is randomly split into a training set containing 70% of the observations and a test set containing the remaining 30%. Stratification helps keep the proportion of potable and non-potable samples similar in both sets.
+
+```{r}
+set.seed(558)
+
+water_split <- initial_split(
+  water,
+  prop = 0.70,
+  strata = Potability
+)
+
+water_train <- training(water_split)
+water_test <- testing(water_split)
+```
+
+Check the size of each dataset.
+
+```{r}
+dim(water_train)
+dim(water_test)
+```
+
+The training data will be used to build and tune the models. The test data will only be used for the final comparison.
+
+## Cross-Validation
+
+Five-fold cross-validation divides the training data into five sections. Each model is trained on four sections and evaluated on the remaining section. This process is repeated until every section has been used for evaluation.
+
+```{r}
+set.seed(558)
+
+water_folds <- vfold_cv(
+  water_train,
+  v = 5,
+  strata = Potability
+)
+```
+
+Log-loss will be used to evaluate the models.
+
+```{r}
+log_loss_metrics <- metric_set(mn_log_loss)
+```
+
+## Preprocessing Recipe
+
+Some predictors contain missing values. These values are replaced with the median calculated from the training data. Using a recipe ensures that preprocessing is learned from the appropriate training portion during resampling rather than from the full dataset. :contentReference[oaicite:1]{index=1}
+
+```{r}
+water_recipe <- recipe(
+  Potability ~ .,
+  data = water_train
+) |>
+  step_impute_median(all_numeric_predictors())
+```
+
+All nine water-quality measurements are included as predictors.
+
+# Classification Tree
+
+## Model Explanation
+
+A classification tree makes predictions by repeatedly dividing the data into smaller groups. Each split is based on a predictor and a cutoff value. For example, the model could first divide samples by sulfate level and then divide each group by pH or hardness.
+
+The final groups are called terminal nodes or leaves. Each leaf produces a predicted class and probability. A tree is easy to understand, but a tree that grows too large may learn random patterns in the training data. This is known as overfitting.
+
+The complexity parameter controls how much the tree is pruned. A smaller value allows a more complicated tree, while a larger value produces a simpler tree. Tidymodels calls this parameter `cost_complexity`. :contentReference[oaicite:2]{index=2}
+
+## Classification Tree Specification
+
+```{r}
+tree_spec <- decision_tree(
+  cost_complexity = tune(),
+  tree_depth = 10,
+  min_n = 10
+) |>
+  set_engine("rpart") |>
+  set_mode("classification")
+```
+
+## Classification Tree Workflow
+
+```{r}
+tree_workflow <- workflow() |>
+  add_recipe(water_recipe) |>
+  add_model(tree_spec)
+```
+
+## Complexity Parameter Grid
+
+The following grid tests 10 possible values for the complexity parameter.
+
+```{r}
+tree_grid <- tibble(
+  cost_complexity = 10^seq(
+    from = -4,
+    to = -1,
+    length.out = 10
+  )
+)
+
+tree_grid
+```
+
+## Tune the Classification Tree
+
+```{r}
+set.seed(558)
+
+tree_results <- tune_grid(
+  tree_workflow,
+  resamples = water_folds,
+  grid = tree_grid,
+  metrics = log_loss_metrics,
+  control = control_grid(save_pred = TRUE)
+)
+```
+
+Display the classification-tree results from lowest to highest log-loss.
+
+```{r}
+tree_results |>
+  collect_metrics() |>
+  arrange(mean)
+```
+
+Select the complexity parameter with the lowest cross-validation log-loss.
+
+```{r}
+best_tree <- select_best(
+  tree_results,
+  metric = "mn_log_loss"
+)
+
+best_tree
+```
+
+Finalize the classification-tree workflow.
+
+```{r}
+final_tree_workflow <- finalize_workflow(
+  tree_workflow,
+  best_tree
+)
+```
+
+## Classification Tree Test Performance
+
+Fit the selected tree to the full training set and evaluate it on the test set.
+
+```{r}
+tree_test_results <- last_fit(
+  final_tree_workflow,
+  split = water_split,
+  metrics = log_loss_metrics
+)
+
+tree_test_results |>
+  collect_metrics()
+```
+
+# Random Forest
+
+## Model Explanation
+
+A random forest combines predictions from many classification trees. Each tree is built from a random sample of the training data. At each split, the model also considers only a random subset of predictors.
+
+A single classification tree can change greatly when the training data changes. A random forest reduces this problem by averaging predictions across many different trees. This often improves prediction performance, although the final model is harder to interpret than one classification tree. :contentReference[oaicite:3]{index=3}
+
+The `mtry` parameter controls how many predictors are randomly considered at each split. Tuning `mtry` helps find the value that produces the best predicted probabilities.
+
+## Random Forest Specification
+
+```{r}
+rf_spec <- rand_forest(
+  mtry = tune(),
+  trees = 1000,
+  min_n = 5
+) |>
+  set_engine("ranger") |>
+  set_mode("classification")
+```
+
+## Random Forest Workflow
+
+```{r}
+rf_workflow <- workflow() |>
+  add_recipe(water_recipe) |>
+  add_model(rf_spec)
+```
+
+## Mtry Parameter Grid
+
+There are nine predictors, so the grid tests values from 1 through 9.
+
+```{r}
+rf_grid <- tibble(
+  mtry = 1:9
+)
+
+rf_grid
+```
+
+## Tune the Random Forest
+
+```{r}
+set.seed(558)
+
+rf_results <- tune_grid(
+  rf_workflow,
+  resamples = water_folds,
+  grid = rf_grid,
+  metrics = log_loss_metrics,
+  control = control_grid(save_pred = TRUE)
+)
+```
+
+Display the random-forest results from lowest to highest log-loss.
+
+```{r}
+rf_results |>
+  collect_metrics() |>
+  arrange(mean)
+```
+
+Select the `mtry` value with the lowest cross-validation log-loss.
+
+```{r}
+best_rf <- select_best(
+  rf_results,
+  metric = "mn_log_loss"
+)
+
+best_rf
+```
+
+Finalize the random-forest workflow.
+
+```{r}
+final_rf_workflow <- finalize_workflow(
+  rf_workflow,
+  best_rf
+)
+```
+
+## Random Forest Test Performance
+
+Fit the selected random forest to the full training set and evaluate it on the test set.
+
+```{r}
+rf_test_results <- last_fit(
+  final_rf_workflow,
+  split = water_split,
+  metrics = log_loss_metrics
+)
+
+rf_test_results |>
+  collect_metrics()
+```
+
+# Final Model Selection
+
+The best classification tree and best random forest are compared using their log-loss on the test data. The model with the lower test log-loss is selected as the overall winner.
+
+```{r}
+model_comparison <- bind_rows(
+  tree_test_results |>
+    collect_metrics() |>
+    mutate(Model = "Classification Tree"),
+  
+  rf_test_results |>
+    collect_metrics() |>
+    mutate(Model = "Random Forest")
+) |>
+  select(Model, .metric, .estimate) |>
+  arrange(.estimate)
+
+model_comparison
+```
+
+```{r}
+winning_model <- model_comparison |>
+  slice_min(
+    order_by = .estimate,
+    n = 1,
+    with_ties = FALSE
+  )
+
+winning_model
+```
+
+The **`r winning_model$Model`** is the overall winner because it produced the lower test-set log-loss of **`r round(winning_model$.estimate, 4)`**.
+
+## EDA
+
+[Click here to return to the EDA Page](EDA.html)

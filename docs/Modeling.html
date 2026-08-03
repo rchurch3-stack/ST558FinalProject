@@ -121,8 +121,34 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
     <h2 id="toc-title">On this page</h2>
    
   <ul>
-  <li><a href="#quarto" id="toc-quarto" class="nav-link active" data-scroll-target="#quarto">Quarto</a></li>
-  <li><a href="#running-code" id="toc-running-code" class="nav-link" data-scroll-target="#running-code">Running Code</a></li>
+  <li><a href="#introduction" id="toc-introduction" class="nav-link active" data-scroll-target="#introduction">Introduction</a></li>
+  <li><a href="#imports" id="toc-imports" class="nav-link" data-scroll-target="#imports">Imports</a></li>
+  <li><a href="#reading-and-preparing-the-data" id="toc-reading-and-preparing-the-data" class="nav-link" data-scroll-target="#reading-and-preparing-the-data">Reading and Preparing the Data</a></li>
+  <li><a href="#training-and-test-sets" id="toc-training-and-test-sets" class="nav-link" data-scroll-target="#training-and-test-sets">Training and Test Sets</a></li>
+  <li><a href="#cross-validation" id="toc-cross-validation" class="nav-link" data-scroll-target="#cross-validation">Cross-Validation</a></li>
+  <li><a href="#preprocessing-recipe" id="toc-preprocessing-recipe" class="nav-link" data-scroll-target="#preprocessing-recipe">Preprocessing Recipe</a></li>
+  <li><a href="#classification-tree" id="toc-classification-tree" class="nav-link" data-scroll-target="#classification-tree">Classification Tree</a>
+  <ul class="collapse">
+  <li><a href="#model-explanation" id="toc-model-explanation" class="nav-link" data-scroll-target="#model-explanation">Model Explanation</a></li>
+  <li><a href="#classification-tree-specification" id="toc-classification-tree-specification" class="nav-link" data-scroll-target="#classification-tree-specification">Classification Tree Specification</a></li>
+  <li><a href="#classification-tree-workflow" id="toc-classification-tree-workflow" class="nav-link" data-scroll-target="#classification-tree-workflow">Classification Tree Workflow</a></li>
+  <li><a href="#complexity-parameter-grid" id="toc-complexity-parameter-grid" class="nav-link" data-scroll-target="#complexity-parameter-grid">Complexity Parameter Grid</a></li>
+  <li><a href="#tune-the-classification-tree" id="toc-tune-the-classification-tree" class="nav-link" data-scroll-target="#tune-the-classification-tree">Tune the Classification Tree</a></li>
+  <li><a href="#classification-tree-test-performance" id="toc-classification-tree-test-performance" class="nav-link" data-scroll-target="#classification-tree-test-performance">Classification Tree Test Performance</a></li>
+  </ul></li>
+  <li><a href="#random-forest" id="toc-random-forest" class="nav-link" data-scroll-target="#random-forest">Random Forest</a>
+  <ul class="collapse">
+  <li><a href="#model-explanation-1" id="toc-model-explanation-1" class="nav-link" data-scroll-target="#model-explanation-1">Model Explanation</a></li>
+  <li><a href="#random-forest-specification" id="toc-random-forest-specification" class="nav-link" data-scroll-target="#random-forest-specification">Random Forest Specification</a></li>
+  <li><a href="#random-forest-workflow" id="toc-random-forest-workflow" class="nav-link" data-scroll-target="#random-forest-workflow">Random Forest Workflow</a></li>
+  <li><a href="#mtry-parameter-grid" id="toc-mtry-parameter-grid" class="nav-link" data-scroll-target="#mtry-parameter-grid">Mtry Parameter Grid</a></li>
+  <li><a href="#tune-the-random-forest" id="toc-tune-the-random-forest" class="nav-link" data-scroll-target="#tune-the-random-forest">Tune the Random Forest</a></li>
+  <li><a href="#random-forest-test-performance" id="toc-random-forest-test-performance" class="nav-link" data-scroll-target="#random-forest-test-performance">Random Forest Test Performance</a></li>
+  </ul></li>
+  <li><a href="#final-model-selection" id="toc-final-model-selection" class="nav-link" data-scroll-target="#final-model-selection">Final Model Selection</a>
+  <ul class="collapse">
+  <li><a href="#eda" id="toc-eda" class="nav-link" data-scroll-target="#eda">EDA</a></li>
+  </ul></li>
   </ul>
 </nav>
     </div>
@@ -154,28 +180,517 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 </header>
 
 
-<section id="quarto" class="level2">
-<h2 class="anchored" data-anchor-id="quarto">Quarto</h2>
-<p>Quarto enables you to weave together content and executable code into a finished document. To learn more about Quarto see <a href="https://quarto.org" class="uri">https://quarto.org</a>.</p>
+<section id="introduction" class="level2">
+<h2 class="anchored" data-anchor-id="introduction">Introduction</h2>
+<p>The goal of this analysis is to predict whether a water sample is potable, meaning safe to drink. The response variable is <code>Potability</code>, and the predictors are measurements of water quality such as pH, hardness, solids, sulfate, conductivity, and turbidity.</p>
+<p>Two classification methods will be compared:</p>
+<ol type="1">
+<li>A classification tree</li>
+<li>A random forest</li>
+</ol>
+<p>The models will be tuned using five-fold cross-validation and log-loss.</p>
 </section>
-<section id="running-code" class="level2">
-<h2 class="anchored" data-anchor-id="running-code">Running Code</h2>
-<p>When you click the <strong>Render</strong> button a document will be generated that includes both content and the output of embedded code. You can embed code like this:</p>
+<section id="imports" class="level2">
+<h2 class="anchored" data-anchor-id="imports">Imports</h2>
 <div class="cell">
-<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="dv">1</span> <span class="sc">+</span> <span class="dv">1</span></span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
-<div class="cell-output cell-output-stdout">
-<pre><code>[1] 2</code></pre>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyverse)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tidyverse' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ggplot2' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tidyr' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'purrr' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'dplyr' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching core tidyverse packages ──────────────────────── tidyverse 2.0.0 ──
+✔ dplyr     1.2.1     ✔ readr     2.1.5
+✔ forcats   1.0.1     ✔ stringr   1.5.2
+✔ ggplot2   4.0.3     ✔ tibble    3.3.0
+✔ lubridate 1.9.4     ✔ tidyr     1.3.2
+✔ purrr     1.2.2     
+── Conflicts ────────────────────────────────────────── tidyverse_conflicts() ──
+✖ dplyr::filter() masks stats::filter()
+✖ dplyr::lag()    masks stats::lag()
+ℹ Use the conflicted package (&lt;http://conflicted.r-lib.org/&gt;) to force all conflicts to become errors</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidymodels)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tidymodels' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Attaching packages ────────────────────────────────────── tidymodels 1.5.0 ──
+✔ broom        1.0.13     ✔ rsample      1.3.2 
+✔ dials        1.4.4      ✔ tailor       0.1.0 
+✔ infer        1.1.0      ✔ tune         2.1.0 
+✔ modeldata    1.5.1      ✔ workflows    1.3.0 
+✔ parsnip      1.6.0      ✔ workflowsets 1.1.1 
+✔ recipes      1.3.3      ✔ yardstick    1.4.0 </code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'broom' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'dials' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'infer' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'modeldata' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'parsnip' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'recipes' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'rsample' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tailor' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'tune' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'workflows' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'workflowsets' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'yardstick' was built under R version 4.5.3</code></pre>
+</div>
+<div class="cell-output cell-output-stderr">
+<pre><code>── Conflicts ───────────────────────────────────────── tidymodels_conflicts() ──
+✖ scales::discard() masks purrr::discard()
+✖ dplyr::filter()   masks stats::filter()
+✖ recipes::fixed()  masks stringr::fixed()
+✖ dplyr::lag()      masks stats::lag()
+✖ yardstick::spec() masks readr::spec()
+✖ recipes::step()   masks stats::step()</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ranger)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stderr">
+<pre><code>Warning: package 'ranger' was built under R version 4.5.3</code></pre>
 </div>
 </div>
-<p>You can add options to executable code like this</p>
+<p>The <code>rpart</code> and <code>ranger</code> packages must also be installed because they are used as the model engines:</p>
+<div class="code-copy-outer-scaffold"><div class="sourceCode" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="fu">install.packages</span>(<span class="fu">c</span>(<span class="st">"rpart"</span>, <span class="st">"ranger"</span>))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<p>Run that installation command once in the R Console, not inside this document.</p>
+</section>
+<section id="reading-and-preparing-the-data" class="level2">
+<h2 class="anchored" data-anchor-id="reading-and-preparing-the-data">Reading and Preparing the Data</h2>
 <div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb27"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>water <span class="ot">&lt;-</span> <span class="fu">read_csv</span>(</span>
+<span id="cb27-2"><a href="#cb27-2" aria-hidden="true" tabindex="-1"></a>  <span class="st">"data/water_potability.csv"</span>,</span>
+<span id="cb27-3"><a href="#cb27-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">show_col_types =</span> <span class="cn">FALSE</span></span>
+<span id="cb27-4"><a href="#cb27-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb27-5"><a href="#cb27-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb27-6"><a href="#cb27-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">Potability =</span> <span class="fu">factor</span>(</span>
+<span id="cb27-7"><a href="#cb27-7" aria-hidden="true" tabindex="-1"></a>      Potability,</span>
+<span id="cb27-8"><a href="#cb27-8" aria-hidden="true" tabindex="-1"></a>      <span class="at">levels =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="dv">1</span>),</span>
+<span id="cb27-9"><a href="#cb27-9" aria-hidden="true" tabindex="-1"></a>      <span class="at">labels =</span> <span class="fu">c</span>(<span class="st">"Not Potable"</span>, <span class="st">"Potable"</span>)</span>
+<span id="cb27-10"><a href="#cb27-10" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb27-11"><a href="#cb27-11" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb27-12"><a href="#cb27-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb27-13"><a href="#cb27-13" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(water)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
 <div class="cell-output cell-output-stdout">
-<pre><code>[1] 4</code></pre>
+<pre><code>Rows: 3,276
+Columns: 10
+$ ph              &lt;dbl&gt; NA, 3.716080, 8.099124, 8.316766, 9.092223, 5.584087, …
+$ Hardness        &lt;dbl&gt; 204.8905, 129.4229, 224.2363, 214.3734, 181.1015, 188.…
+$ Solids          &lt;dbl&gt; 20791.32, 18630.06, 19909.54, 22018.42, 17978.99, 2874…
+$ Chloramines     &lt;dbl&gt; 7.300212, 6.635246, 9.275884, 8.059332, 6.546600, 7.54…
+$ Sulfate         &lt;dbl&gt; 368.5164, NA, NA, 356.8861, 310.1357, 326.6784, 393.66…
+$ Conductivity    &lt;dbl&gt; 564.3087, 592.8854, 418.6062, 363.2665, 398.4108, 280.…
+$ Organic_carbon  &lt;dbl&gt; 10.379783, 15.180013, 16.868637, 18.436524, 11.558279,…
+$ Trihalomethanes &lt;dbl&gt; 86.99097, 56.32908, 66.42009, 100.34167, 31.99799, 54.…
+$ Turbidity       &lt;dbl&gt; 2.963135, 4.500656, 3.055934, 4.628771, 4.075075, 2.55…
+$ Potability      &lt;fct&gt; Not Potable, Not Potable, Not Potable, Not Potable, No…</code></pre>
 </div>
 </div>
-<p>The <code>echo: false</code> option disables the printing of code (only output is displayed).</p>
+</section>
+<section id="training-and-test-sets" class="level2">
+<h2 class="anchored" data-anchor-id="training-and-test-sets">Training and Test Sets</h2>
+<p>The data is randomly split into a training set containing 70% of the observations and a test set containing the remaining 30%. Stratification helps keep the proportion of potable and non-potable samples similar in both sets.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb29"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">558</span>)</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>water_split <span class="ot">&lt;-</span> <span class="fu">initial_split</span>(</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>  water,</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">prop =</span> <span class="fl">0.70</span>,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">strata =</span> Potability</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>water_train <span class="ot">&lt;-</span> <span class="fu">training</span>(water_split)</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>water_test <span class="ot">&lt;-</span> <span class="fu">testing</span>(water_split)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Check the size of each dataset.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(water_train)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 2292   10</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb32"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb32-1"><a href="#cb32-1" aria-hidden="true" tabindex="-1"></a><span class="fu">dim</span>(water_test)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] 984  10</code></pre>
+</div>
+</div>
+<p>The training data will be used to build and tune the models. The test data will only be used for the final comparison.</p>
+</section>
+<section id="cross-validation" class="level2">
+<h2 class="anchored" data-anchor-id="cross-validation">Cross-Validation</h2>
+<p>Five-fold cross-validation divides the training data into five sections. Each model is trained on four sections and evaluated on the remaining section. This process is repeated until every section has been used for evaluation.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">558</span>)</span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>water_folds <span class="ot">&lt;-</span> <span class="fu">vfold_cv</span>(</span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  water_train,</span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">v =</span> <span class="dv">5</span>,</span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">strata =</span> Potability</span>
+<span id="cb34-7"><a href="#cb34-7" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Log-loss will be used to evaluate the models.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>log_loss_metrics <span class="ot">&lt;-</span> <span class="fu">metric_set</span>(mn_log_loss)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="preprocessing-recipe" class="level2">
+<h2 class="anchored" data-anchor-id="preprocessing-recipe">Preprocessing Recipe</h2>
+<p>Some predictors contain missing values. These values are replaced with the median calculated from the training data. Using a recipe ensures that preprocessing is learned from the appropriate training portion during resampling rather than from the full dataset. :contentReference<span data-index="1">oaicite:1</span></p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb36"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>water_recipe <span class="ot">&lt;-</span> <span class="fu">recipe</span>(</span>
+<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>  Potability <span class="sc">~</span> .,</span>
+<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">data =</span> water_train</span>
+<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">step_impute_median</span>(<span class="fu">all_numeric_predictors</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>All nine water-quality measurements are included as predictors.</p>
+</section>
+<section id="classification-tree" class="level1">
+<h1>Classification Tree</h1>
+<section id="model-explanation" class="level2">
+<h2 class="anchored" data-anchor-id="model-explanation">Model Explanation</h2>
+<p>A classification tree makes predictions by repeatedly dividing the data into smaller groups. Each split is based on a predictor and a cutoff value. For example, the model could first divide samples by sulfate level and then divide each group by pH or hardness.</p>
+<p>The final groups are called terminal nodes or leaves. Each leaf produces a predicted class and probability. A tree is easy to understand, but a tree that grows too large may learn random patterns in the training data. This is known as overfitting.</p>
+<p>The complexity parameter controls how much the tree is pruned. A smaller value allows a more complicated tree, while a larger value produces a simpler tree. Tidymodels calls this parameter <code>cost_complexity</code>. :contentReference<span data-index="2">oaicite:2</span></p>
+</section>
+<section id="classification-tree-specification" class="level2">
+<h2 class="anchored" data-anchor-id="classification-tree-specification">Classification Tree Specification</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>tree_spec <span class="ot">&lt;-</span> <span class="fu">decision_tree</span>(</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">cost_complexity =</span> <span class="fu">tune</span>(),</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">tree_depth =</span> <span class="dv">10</span>,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">min_n =</span> <span class="dv">10</span></span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"rpart"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="classification-tree-workflow" class="level2">
+<h2 class="anchored" data-anchor-id="classification-tree-workflow">Classification Tree Workflow</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb38"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>tree_workflow <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(water_recipe) <span class="sc">|&gt;</span></span>
+<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(tree_spec)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="complexity-parameter-grid" class="level2">
+<h2 class="anchored" data-anchor-id="complexity-parameter-grid">Complexity Parameter Grid</h2>
+<p>The following grid tests 10 possible values for the complexity parameter.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a>tree_grid <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">cost_complexity =</span> <span class="dv">10</span><span class="sc">^</span><span class="fu">seq</span>(</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">from =</span> <span class="sc">-</span><span class="dv">4</span>,</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">to =</span> <span class="sc">-</span><span class="dv">1</span>,</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">length.out =</span> <span class="dv">10</span></span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>tree_grid</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 1
+   cost_complexity
+             &lt;dbl&gt;
+ 1        0.0001  
+ 2        0.000215
+ 3        0.000464
+ 4        0.001   
+ 5        0.00215 
+ 6        0.00464 
+ 7        0.01    
+ 8        0.0215  
+ 9        0.0464  
+10        0.1     </code></pre>
+</div>
+</div>
+</section>
+<section id="tune-the-classification-tree" class="level2">
+<h2 class="anchored" data-anchor-id="tune-the-classification-tree">Tune the Classification Tree</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">558</span>)</span>
+<span id="cb41-2"><a href="#cb41-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb41-3"><a href="#cb41-3" aria-hidden="true" tabindex="-1"></a>tree_results <span class="ot">&lt;-</span> <span class="fu">tune_grid</span>(</span>
+<span id="cb41-4"><a href="#cb41-4" aria-hidden="true" tabindex="-1"></a>  tree_workflow,</span>
+<span id="cb41-5"><a href="#cb41-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">resamples =</span> water_folds,</span>
+<span id="cb41-6"><a href="#cb41-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">grid =</span> tree_grid,</span>
+<span id="cb41-7"><a href="#cb41-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">metrics =</span> log_loss_metrics,</span>
+<span id="cb41-8"><a href="#cb41-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">control_grid</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb41-9"><a href="#cb41-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Display the classification-tree results from lowest to highest log-loss.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb42"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a>tree_results <span class="sc">|&gt;</span></span>
+<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>() <span class="sc">|&gt;</span></span>
+<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(mean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 10 × 7
+   cost_complexity .metric     .estimator  mean     n   std_err .config         
+             &lt;dbl&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;     &lt;dbl&gt; &lt;chr&gt;           
+ 1        0.0464   mn_log_loss binary     0.669     5 0.0000965 pre0_mod09_post0
+ 2        0.1      mn_log_loss binary     0.669     5 0.0000965 pre0_mod10_post0
+ 3        0.0215   mn_log_loss binary     0.673     5 0.00600   pre0_mod08_post0
+ 4        0.01     mn_log_loss binary     0.681     5 0.00810   pre0_mod07_post0
+ 5        0.00464  mn_log_loss binary     0.904     5 0.104     pre0_mod06_post0
+ 6        0.00215  mn_log_loss binary     1.41      5 0.202     pre0_mod05_post0
+ 7        0.001    mn_log_loss binary     1.67      5 0.184     pre0_mod04_post0
+ 8        0.0001   mn_log_loss binary     1.78      5 0.186     pre0_mod01_post0
+ 9        0.000215 mn_log_loss binary     1.78      5 0.186     pre0_mod02_post0
+10        0.000464 mn_log_loss binary     1.78      5 0.186     pre0_mod03_post0</code></pre>
+</div>
+</div>
+<p>Select the complexity parameter with the lowest cross-validation log-loss.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb44"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a>best_tree <span class="ot">&lt;-</span> <span class="fu">select_best</span>(</span>
+<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a>  tree_results,</span>
+<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">metric =</span> <span class="st">"mn_log_loss"</span></span>
+<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a>best_tree</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  cost_complexity .config         
+            &lt;dbl&gt; &lt;chr&gt;           
+1          0.0464 pre0_mod09_post0</code></pre>
+</div>
+</div>
+<p>Finalize the classification-tree workflow.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb46"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>final_tree_workflow <span class="ot">&lt;-</span> <span class="fu">finalize_workflow</span>(</span>
+<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>  tree_workflow,</span>
+<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a>  best_tree</span>
+<span id="cb46-4"><a href="#cb46-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="classification-tree-test-performance" class="level2">
+<h2 class="anchored" data-anchor-id="classification-tree-test-performance">Classification Tree Test Performance</h2>
+<p>Fit the selected tree to the full training set and evaluate it on the test set.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a>tree_test_results <span class="ot">&lt;-</span> <span class="fu">last_fit</span>(</span>
+<span id="cb47-2"><a href="#cb47-2" aria-hidden="true" tabindex="-1"></a>  final_tree_workflow,</span>
+<span id="cb47-3"><a href="#cb47-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">split =</span> water_split,</span>
+<span id="cb47-4"><a href="#cb47-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">metrics =</span> log_loss_metrics</span>
+<span id="cb47-5"><a href="#cb47-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb47-6"><a href="#cb47-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb47-7"><a href="#cb47-7" aria-hidden="true" tabindex="-1"></a>tree_test_results <span class="sc">|&gt;</span></span>
+<span id="cb47-8"><a href="#cb47-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  .metric     .estimator .estimate .config        
+  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;          
+1 mn_log_loss binary         0.669 pre0_mod0_post0</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="random-forest" class="level1">
+<h1>Random Forest</h1>
+<section id="model-explanation-1" class="level2">
+<h2 class="anchored" data-anchor-id="model-explanation-1">Model Explanation</h2>
+<p>A random forest combines predictions from many classification trees. Each tree is built from a random sample of the training data. At each split, the model also considers only a random subset of predictors.</p>
+<p>A single classification tree can change greatly when the training data changes. A random forest reduces this problem by averaging predictions across many different trees. This often improves prediction performance, although the final model is harder to interpret than one classification tree. :contentReference<span data-index="3">oaicite:3</span></p>
+<p>The <code>mtry</code> parameter controls how many predictors are randomly considered at each split. Tuning <code>mtry</code> helps find the value that produces the best predicted probabilities.</p>
+</section>
+<section id="random-forest-specification" class="level2">
+<h2 class="anchored" data-anchor-id="random-forest-specification">Random Forest Specification</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a>rf_spec <span class="ot">&lt;-</span> <span class="fu">rand_forest</span>(</span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">mtry =</span> <span class="fu">tune</span>(),</span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">trees =</span> <span class="dv">1000</span>,</span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">min_n =</span> <span class="dv">5</span></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_engine</span>(<span class="st">"ranger"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">set_mode</span>(<span class="st">"classification"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="random-forest-workflow" class="level2">
+<h2 class="anchored" data-anchor-id="random-forest-workflow">Random Forest Workflow</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb50"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb50-1"><a href="#cb50-1" aria-hidden="true" tabindex="-1"></a>rf_workflow <span class="ot">&lt;-</span> <span class="fu">workflow</span>() <span class="sc">|&gt;</span></span>
+<span id="cb50-2"><a href="#cb50-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_recipe</span>(water_recipe) <span class="sc">|&gt;</span></span>
+<span id="cb50-3"><a href="#cb50-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">add_model</span>(rf_spec)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="mtry-parameter-grid" class="level2">
+<h2 class="anchored" data-anchor-id="mtry-parameter-grid">Mtry Parameter Grid</h2>
+<p>There are nine predictors, so the grid tests values from 1 through 9.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a>rf_grid <span class="ot">&lt;-</span> <span class="fu">tibble</span>(</span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="at">mtry =</span> <span class="dv">1</span><span class="sc">:</span><span class="dv">9</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>rf_grid</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 9 × 1
+   mtry
+  &lt;int&gt;
+1     1
+2     2
+3     3
+4     4
+5     5
+6     6
+7     7
+8     8
+9     9</code></pre>
+</div>
+</div>
+</section>
+<section id="tune-the-random-forest" class="level2">
+<h2 class="anchored" data-anchor-id="tune-the-random-forest">Tune the Random Forest</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb53"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb53-1"><a href="#cb53-1" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">558</span>)</span>
+<span id="cb53-2"><a href="#cb53-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb53-3"><a href="#cb53-3" aria-hidden="true" tabindex="-1"></a>rf_results <span class="ot">&lt;-</span> <span class="fu">tune_grid</span>(</span>
+<span id="cb53-4"><a href="#cb53-4" aria-hidden="true" tabindex="-1"></a>  rf_workflow,</span>
+<span id="cb53-5"><a href="#cb53-5" aria-hidden="true" tabindex="-1"></a>  <span class="at">resamples =</span> water_folds,</span>
+<span id="cb53-6"><a href="#cb53-6" aria-hidden="true" tabindex="-1"></a>  <span class="at">grid =</span> rf_grid,</span>
+<span id="cb53-7"><a href="#cb53-7" aria-hidden="true" tabindex="-1"></a>  <span class="at">metrics =</span> log_loss_metrics,</span>
+<span id="cb53-8"><a href="#cb53-8" aria-hidden="true" tabindex="-1"></a>  <span class="at">control =</span> <span class="fu">control_grid</span>(<span class="at">save_pred =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb53-9"><a href="#cb53-9" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<p>Display the random-forest results from lowest to highest log-loss.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb54"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb54-1"><a href="#cb54-1" aria-hidden="true" tabindex="-1"></a>rf_results <span class="sc">|&gt;</span></span>
+<span id="cb54-2"><a href="#cb54-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>() <span class="sc">|&gt;</span></span>
+<span id="cb54-3"><a href="#cb54-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(mean)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 9 × 7
+   mtry .metric     .estimator  mean     n std_err .config        
+  &lt;int&gt; &lt;chr&gt;       &lt;chr&gt;      &lt;dbl&gt; &lt;int&gt;   &lt;dbl&gt; &lt;chr&gt;          
+1     8 mn_log_loss binary     0.626     5 0.00679 pre0_mod8_post0
+2     6 mn_log_loss binary     0.627     5 0.00656 pre0_mod6_post0
+3     5 mn_log_loss binary     0.627     5 0.00552 pre0_mod5_post0
+4     4 mn_log_loss binary     0.627     5 0.00556 pre0_mod4_post0
+5     7 mn_log_loss binary     0.627     5 0.00560 pre0_mod7_post0
+6     9 mn_log_loss binary     0.628     5 0.00694 pre0_mod9_post0
+7     3 mn_log_loss binary     0.628     5 0.00531 pre0_mod3_post0
+8     2 mn_log_loss binary     0.632     5 0.00511 pre0_mod2_post0
+9     1 mn_log_loss binary     0.639     5 0.00347 pre0_mod1_post0</code></pre>
+</div>
+</div>
+<p>Select the <code>mtry</code> value with the lowest cross-validation log-loss.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb56"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb56-1"><a href="#cb56-1" aria-hidden="true" tabindex="-1"></a>best_rf <span class="ot">&lt;-</span> <span class="fu">select_best</span>(</span>
+<span id="cb56-2"><a href="#cb56-2" aria-hidden="true" tabindex="-1"></a>  rf_results,</span>
+<span id="cb56-3"><a href="#cb56-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">metric =</span> <span class="st">"mn_log_loss"</span></span>
+<span id="cb56-4"><a href="#cb56-4" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb56-5"><a href="#cb56-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb56-6"><a href="#cb56-6" aria-hidden="true" tabindex="-1"></a>best_rf</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+   mtry .config        
+  &lt;int&gt; &lt;chr&gt;          
+1     8 pre0_mod8_post0</code></pre>
+</div>
+</div>
+<p>Finalize the random-forest workflow.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb58"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb58-1"><a href="#cb58-1" aria-hidden="true" tabindex="-1"></a>final_rf_workflow <span class="ot">&lt;-</span> <span class="fu">finalize_workflow</span>(</span>
+<span id="cb58-2"><a href="#cb58-2" aria-hidden="true" tabindex="-1"></a>  rf_workflow,</span>
+<span id="cb58-3"><a href="#cb58-3" aria-hidden="true" tabindex="-1"></a>  best_rf</span>
+<span id="cb58-4"><a href="#cb58-4" aria-hidden="true" tabindex="-1"></a>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="random-forest-test-performance" class="level2">
+<h2 class="anchored" data-anchor-id="random-forest-test-performance">Random Forest Test Performance</h2>
+<p>Fit the selected random forest to the full training set and evaluate it on the test set.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb59"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb59-1"><a href="#cb59-1" aria-hidden="true" tabindex="-1"></a>rf_test_results <span class="ot">&lt;-</span> <span class="fu">last_fit</span>(</span>
+<span id="cb59-2"><a href="#cb59-2" aria-hidden="true" tabindex="-1"></a>  final_rf_workflow,</span>
+<span id="cb59-3"><a href="#cb59-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">split =</span> water_split,</span>
+<span id="cb59-4"><a href="#cb59-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">metrics =</span> log_loss_metrics</span>
+<span id="cb59-5"><a href="#cb59-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb59-6"><a href="#cb59-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb59-7"><a href="#cb59-7" aria-hidden="true" tabindex="-1"></a>rf_test_results <span class="sc">|&gt;</span></span>
+<span id="cb59-8"><a href="#cb59-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">collect_metrics</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 4
+  .metric     .estimator .estimate .config        
+  &lt;chr&gt;       &lt;chr&gt;          &lt;dbl&gt; &lt;chr&gt;          
+1 mn_log_loss binary         0.602 pre0_mod0_post0</code></pre>
+</div>
+</div>
+</section>
+</section>
+<section id="final-model-selection" class="level1">
+<h1>Final Model Selection</h1>
+<p>The best classification tree and best random forest are compared using their log-loss on the test data. The model with the lower test log-loss is selected as the overall winner.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb61"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb61-1"><a href="#cb61-1" aria-hidden="true" tabindex="-1"></a>model_comparison <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb61-2"><a href="#cb61-2" aria-hidden="true" tabindex="-1"></a>  tree_test_results <span class="sc">|&gt;</span></span>
+<span id="cb61-3"><a href="#cb61-3" aria-hidden="true" tabindex="-1"></a>    <span class="fu">collect_metrics</span>() <span class="sc">|&gt;</span></span>
+<span id="cb61-4"><a href="#cb61-4" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Model =</span> <span class="st">"Classification Tree"</span>),</span>
+<span id="cb61-5"><a href="#cb61-5" aria-hidden="true" tabindex="-1"></a>  </span>
+<span id="cb61-6"><a href="#cb61-6" aria-hidden="true" tabindex="-1"></a>  rf_test_results <span class="sc">|&gt;</span></span>
+<span id="cb61-7"><a href="#cb61-7" aria-hidden="true" tabindex="-1"></a>    <span class="fu">collect_metrics</span>() <span class="sc">|&gt;</span></span>
+<span id="cb61-8"><a href="#cb61-8" aria-hidden="true" tabindex="-1"></a>    <span class="fu">mutate</span>(<span class="at">Model =</span> <span class="st">"Random Forest"</span>)</span>
+<span id="cb61-9"><a href="#cb61-9" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span></span>
+<span id="cb61-10"><a href="#cb61-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(Model, .metric, .estimate) <span class="sc">|&gt;</span></span>
+<span id="cb61-11"><a href="#cb61-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(.estimate)</span>
+<span id="cb61-12"><a href="#cb61-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb61-13"><a href="#cb61-13" aria-hidden="true" tabindex="-1"></a>model_comparison</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 2 × 3
+  Model               .metric     .estimate
+  &lt;chr&gt;               &lt;chr&gt;           &lt;dbl&gt;
+1 Random Forest       mn_log_loss     0.602
+2 Classification Tree mn_log_loss     0.669</code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb63"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb63-1"><a href="#cb63-1" aria-hidden="true" tabindex="-1"></a>winning_model <span class="ot">&lt;-</span> model_comparison <span class="sc">|&gt;</span></span>
+<span id="cb63-2"><a href="#cb63-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_min</span>(</span>
+<span id="cb63-3"><a href="#cb63-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">order_by =</span> .estimate,</span>
+<span id="cb63-4"><a href="#cb63-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">n =</span> <span class="dv">1</span>,</span>
+<span id="cb63-5"><a href="#cb63-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">with_ties =</span> <span class="cn">FALSE</span></span>
+<span id="cb63-6"><a href="#cb63-6" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb63-7"><a href="#cb63-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb63-8"><a href="#cb63-8" aria-hidden="true" tabindex="-1"></a>winning_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 3
+  Model         .metric     .estimate
+  &lt;chr&gt;         &lt;chr&gt;           &lt;dbl&gt;
+1 Random Forest mn_log_loss     0.602</code></pre>
+</div>
+</div>
+<p>The <strong>Random Forest</strong> is the overall winner because it produced the lower test-set log-loss of <strong>0.6021</strong>.</p>
+<section id="eda" class="level2">
+<h2 class="anchored" data-anchor-id="eda">EDA</h2>
+<p><a href="EDA.html">Click here to return to the EDA Page</a></p>
 
 
+</section>
 </section>
 
 </main> <!-- /main -->
