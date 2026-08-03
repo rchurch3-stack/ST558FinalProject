@@ -5,26 +5,36 @@ format: html
 editor: visual
 ---
 
-### Imports
+## Introduction
 
-```{r}
-library(readr)
-```
+The Water Potability dataset contains measurements of water quality, including variables such as pH, hardness, solids, chloramines, sulfate, conductivity, and turbidity. The response variable is **Potability**, which indicates whether the water is safe to drink.
 
+The purpose of this exploratory data analysis is to better understand the data, check for any data quality issues, and explore relationships between the predictors and water potability. These results will help prepare the data for predictive modeling.
 
-### Reading in the data
+## Imports
 
 ```{r}
 library(readr)
 library(dplyr)
+library(ggplot2)
+```
 
+## Reading in the Data
+
+```{r}
 water <- read_csv("data/water_potability.csv")
 
 water <- water %>%
-  mutate(Potability = factor(Potability))
+  mutate(
+    Potability = factor(
+      Potability,
+      levels = c(0, 1),
+      labels = c("Not Potable", "Potable")
+    )
+  )
 ```
 
-### Initial exploration
+## Initial Exploration
 
 Let's begin by examining the dimensions and structure of the dataset.
 
@@ -33,11 +43,17 @@ dim(water)
 glimpse(water)
 ```
 
+The dataset contains multiple water quality measurements along with a response variable indicating whether the water is potable.
+
 Next, preview the first few observations.
 
 ```{r}
 head(water)
 ```
+
+This gives a quick look at the data after it has been imported.
+
+## Missing Values
 
 Check the amount of missing data in each variable.
 
@@ -45,13 +61,62 @@ Check the amount of missing data in each variable.
 colSums(is.na(water))
 ```
 
+The dataset contains missing values in some variables, so this should be considered before building models.
+
+## Summary Statistics
+
 Finally, examine summary statistics for each variable.
 
 ```{r}
 summary(water)
 ```
 
+These summaries provide an overview of the distributions and ranges of the variables.
 
-### Modeling  
+## Graphical Summaries
+
+### Distribution of Potability
+
+```{r}
+ggplot(water, aes(Potability)) +
+  geom_bar(fill = "steelblue") +
+  labs(
+    title = "Water Potability",
+    x = "Potability",
+    y = "Count"
+  )
+```
+
+This plot shows the number of potable and non-potable water samples.
+
+### Distribution of pH
+
+```{r}
+ggplot(water, aes(ph)) +
+  geom_histogram(bins = 30, fill = "steelblue") +
+  labs(
+    title = "Distribution of pH",
+    x = "pH",
+    y = "Count"
+  )
+```
+
+Most water samples have pH values near the middle of the observed range.
+
+### pH by Potability
+
+```{r}
+ggplot(water, aes(Potability, ph, fill = Potability)) +
+  geom_boxplot() +
+  labs(
+    title = "pH by Water Potability",
+    x = "Potability",
+    y = "pH"
+  )
+```
+
+This plot compares the distribution of pH values for potable and non-potable water.
+
+## Modeling
 
 [Click here for the Modeling Page](Modeling.html)
